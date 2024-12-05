@@ -7,9 +7,15 @@ else
   msg_help=1
 fi
 
-set -euo pipefail
+# Description: Message helper functions
+# Author: monr3d
+# License: GPL-3.0 license
+# Version: 1.0.1
 
-#Source helper functions
+# Set strict mode
+set -Eeuo pipefail
+
+# Source helper functions
 source <(wget -qO- https://raw.githubusercontent.com/monr3d/bash_script/refs/heads/master/lib/script-helper.sh)
 
 # Variables
