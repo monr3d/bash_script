@@ -34,8 +34,8 @@ _spinner() {
   tput civis cr cuf 3 sc
 
   while true; do
-    tput rc cub 2
-    printf "%b" "${SPINCOLOR}${SPINSTR:i++%len:1}$NC"
+    tput rc cub 3
+    printf " %b " "${SPINCOLOR}${SPINSTR:i++%len:1}$NC"
     sleep "$SPINSPEED"
   done
 }
@@ -52,9 +52,10 @@ _stop_spinner() {
 }
 
 _box() {
-  local title="${1:-}"
-  local width="${2:-0}"
-  local height="${3:-0}"
+  local title="$1"
+  local width="$2"
+  local height="$3"
+  local -i i
 
   # Print the box
   printf "\r ╔%s╗" "$(gen_separator $width ═)"
@@ -83,6 +84,7 @@ show_msg() {
   if [[ -z "$SPINPID" || ! -d /proc/"$SPINPID" ]]; then
     _spinner &
     SPINPID=$!
+    sleep 0.1 # Wait for the spinner to start
   fi
 
   tput rc el
@@ -168,15 +170,13 @@ print_boxed() {
   _stop_spinner && stty -echo && tput civis
 
   # Define variables
+  local msg cmd title buffer
   local -i y_pos countdown height width exit_code
-  local msg cmd title
-  local -a buffer
 
   # Get terminal dimensions
   IFS='[;' read -p $'\e[6n' -d R -rs _ y_pos _
   width=$((COLUMNS - 4))
-  height=$((LINES - y_pos))
-  [[ $((LINES - y_pos)) -le 10 ]] && [[ $((LINES)) -ge 12 ]] && height=10 || height=$((LINES - y_pos))
+  [[ $((LINES - y_pos)) -le 12 ]] && [[ $((LINES)) -ge 12 ]] && height=10 || height=$((LINES - y_pos - 2))
 
   # Parse options
   OPTIND=1
@@ -201,9 +201,14 @@ print_boxed() {
   _box "$title" "$width" "$height"
 
   # Print the message
-  tput cr cuu $height sc && set +o pipefail
+  tput cuu $height cr sc
 
-  eval "$cmd" 2>&1 | fold -w $((width - 2)) | while IFS= read -r line; do
+  eval "$cmd" 2>&1 | while IFS= read -r line; do
+
+    # Wrap the line
+    if [[ ${#line} -gt $((width - 2)) ]]; then
+      line="$(echo "$line..." | fold -w $((width - 5)))"
+    fi  
 
     buffer+=("$line")
 
@@ -222,9 +227,9 @@ print_boxed() {
         printf "%-*s\n" "$((width - 2))" "" # Blank line
       fi
     done
-  done && exit_code=${PIPESTATUS[0]}
+  done
 
-  set -o pipefail
+  exit_code=${PIPESTATUS[0]}
 
   # No action, just consume input
   while IFS= read -r -s -t 0.1 -n 1; do
