@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Check if already sourced
+if [[ -n "${scr_help:-}" ]]; then
+  return 0 &>/dev/null
+else
+  scr_help=1
+fi
+
 # Description: Script helper functions
 # Author: monr3d
 # License: GPL-3.0 license
